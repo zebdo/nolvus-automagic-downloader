@@ -74,11 +74,28 @@ func main() {
 					}
 				}
 
-				// Attempt to click the download button
+				// Click the button inside the shadow root
+				var clicked bool
 				err = chromedp.Run(ctx,
-					chromedp.WaitVisible(`button[id="slowDownloadButton"]`),
-					chromedp.Click(`button[id="slowDownloadButton"]`),
+					chromedp.EvaluateAsDevTools(`
+						(() => {
+							const host = document.querySelector("mod-file-download");
+							if (!host || !host.shadowRoot) return false;
+							const btn = host.shadowRoot.querySelector("button span span");
+							if (!btn) return false;
+							btn.click();
+							return true;
+						})()
+					`, &clicked),
 				)
+				if err != nil {
+					log.Printf("Error clicking download button: %v", err)
+				} else if clicked {
+					log.Println("Clicked download button successfully!")
+					time.Sleep(2 * time.Second)
+				} else {
+					log.Println("Download button not found inside shadow root")
+				}
 
 				// Log error without exiting
 				if err != nil {
